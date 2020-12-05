@@ -1,10 +1,86 @@
 import pygame as pg
 from pygame.locals import *
+import random as r
+
+class Player(pg.sprite.Sprite):
+    def __init__(self):
+        super(Player, self).__init__()
+        self.surf = pg.image.load("images/jet.png").convert()
+        self.surf.set_colorkey([255,255,255], RLEACCEL)
+        self.rect = self.surf.get_rect()
+
+    def update(self, keys):
+        if keys[K_UP]:
+            self.rect.move_ip(0,-1)
+        if keys[K_DOWN]:
+            self.rect.move_ip(0,1)
+        if keys[K_LEFT]:
+            self.rect.move_ip(-1, 0)
+        if keys[K_RIGHT]:
+            self.rect.move_ip(1, 0)
+
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
+        if self.rect.top < 0:
+            self.rect.top = 0
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
+
+class Enemy(pg.sprite.Sprite):
+    def __init__(self):
+        super(Enemy, self).__init__()
+        self.surf = pg.image.load("images/missile.png").convert()
+        self.surf.set_colorkey([255,255,255], RLEACCEL)
+        self.rect = self.surf.get_rect(
+            center=[
+                SCREEN_WIDTH + 20,
+                r.randint(0, SCREEN_HEIGHT - 10)
+            ])
+        self.speed = r.randint(1, 150) /100
+
+    def update(self):
+        self.rect.move_ip(-self.speed, 0)
+        if self.rect.right < 0:
+            self.kill()
+
+
+class Cloud(pg.sprite.Sprite):
+    def __init__(self):
+        super(Cloud, self).__init__()
+        self.surf = pg.image.load("images/cloud.png").convert()
+        self.surf.set_colorkey([0, 0, 0], RLEACCEL)
+        self.rect = self.surf.get_rect(
+            center=[
+                SCREEN_WIDTH + 20,
+                r.randint(0, SCREEN_HEIGHT - 10)
+            ])
+        self.speed = r.randint(1, 150) / 100
+
+    def update(self):
+        self.rect.move_ip(-0.1, 0)
+        if self.rect.right < 0:
+            self.kill()
+
+
 
 pg.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+player = Player()
+groups = {}
+groups["enemies"] = pg.sprite.Group()
+groups["clouds"] = pg.sprite.Group()
+groups["all"] = pg.sprite.Group()
+groups["all"].add(player)
+events = {}
+events["ADDENEMY"] = pg.USEREVENT + 1
+pg.time.set_timer(events["ADDENEMY"], 20)
+events["ADDCLOUD"] = pg.USEREVENT + 1
+pg.time.set_timer(events["ADDCLOUD"], 100)
+
 
 runnig = True
 while runnig:
@@ -16,12 +92,28 @@ while runnig:
         elif event.type == QUIT:
             runnig = False
 
+        elif event.type == events["ADDENEMY"]:
+            groups["enemies"].add(Enemy())
 
-    screen.fill([255,255,255])
-    surf = pg.Surface([50,50])
-    surf.fill([0,0,0])
-    rect = surf.get_rect()
-    screen.blit(surf, [(SCREEN_WIDTH-surf.get_width())/2, (SCREEN_HEIGHT-surf.get_height())/2])
+        elif event.type == events["ADDCLOUD"]:
+            groups["clouds"].add(Cloud())
+
+    pressed_keys = pg.key.get_pressed()
+    player.update(pressed_keys)
+    groups["enemies"].update()
+    groups["clouds"].update()
+
+    screen.fill([135, 206, 250])
+
+    for group in groups:
+        for entity in groups[group]:
+            screen.blit(entity.surf, entity.rect)
+
+    screen.blit(player.surf, player.rect)
+    if pg.sprite.spritecollideany(player, groups["enemies"]):
+        player.kill()
+        runnig = False
+
     pg.display.flip()
 
 pg.quit()
