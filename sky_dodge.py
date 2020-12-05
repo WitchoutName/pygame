@@ -80,9 +80,9 @@ groups["all"] = pg.sprite.Group()
 groups["all"].add(player)
 events = {}
 events["ADDENEMY"] = pg.USEREVENT + 1
-pg.time.set_timer(events["ADDENEMY"], 150)
+pg.time.set_timer(events["ADDENEMY"], 20)
 events["ADDCLOUD"] = pg.USEREVENT + 1
-pg.time.set_timer(events["ADDCLOUD"], 1000)
+pg.time.set_timer(events["ADDCLOUD"], 100)
 pg.mixer.music.load("sound/Sky_dodge_theme.ogg")
 pg.mixer.music.set_volume(0.05)
 pg.mixer.music.play(loops=-1)
