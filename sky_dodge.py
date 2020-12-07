@@ -9,9 +9,12 @@ from Classes.cloud import Cloud
 from constants import *
 
 pg.init()
+pg.font.init()
+font = pg.font.SysFont('Comic Sans MS', 60)
 clock = pg.time.Clock()
 screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 player = Player()
+bg = pg.image.load("images/nebula.jpg").convert()
 
 groups = Groups()
 for group in Group:
@@ -20,12 +23,12 @@ groups[Group.DEFAULT].add(player)
 
 events = Events()
 events[Event.ADDENEMY] = pg.USEREVENT + 1
-pg.time.set_timer(events[Event.ADDENEMY], 200)
+pg.time.set_timer(events[Event.ADDENEMY], 500)
 events[Event.ADDCLOUD] = pg.USEREVENT + 2
-pg.time.set_timer(events[Event.ADDCLOUD], 1000)
+#pg.time.set_timer(events[Event.ADDCLOUD], 1000)
 
 pg.mixer.music.load("sound/Sky_dodge_theme.ogg")
-pg.mixer.music.set_volume(0.05)
+pg.mixer.music.set_volume(0.01)
 pg.mixer.music.play(loops=-1)
 
 sounds = Sounds()
@@ -34,8 +37,7 @@ for x, sound in enumerate(Sound):
     sounds[sound] = pg.mixer.Sound(sound_paths[x])
 
 for sound in sounds:
-    sound.set_volume(0.1)
-
+    sound.set_volume(0.01)
 
 running = True
 while running:
@@ -50,21 +52,27 @@ while running:
         elif event.type == events[Event.ADDENEMY]:
             Groups()[Group.ENEMIES].add(Enemy())
 
-        elif event.type == events[Event.ADDCLOUD]:
-            Groups()[Group.CLOUDS].add(Cloud())
+        #elif event.type == events[Event.ADDCLOUD]:
+        #    Groups()[Group.CLOUDS].add(Cloud())
 
     pressed_keys = pg.key.get_pressed()
     player.update(pressed_keys)
-    Groups()[Group.ENEMIES].update()
-    Groups()[Group.CLOUDS].update()
+    groups[Group.ENEMIES].update()
+    groups[Group.CLOUDS].update()
+    groups[Group.ROCKETS].update()
 
-    screen.fill([135, 206, 250])
+    screen.blit(bg, [0,0])
+    for enemy in groups[Group.ENEMIES]:
+        if pg.sprite.spritecollideany(enemy, groups[Group.ROCKETS]):
+            enemy.kill()
+            player.score += 1
 
     for group in groups:
         for entity in group:
             screen.blit(entity.surf, entity.rect)
 
     screen.blit(player.surf, player.rect)
+    screen.blit(font.render(f"SCORE: {player.score}", False, (45, 235, 3)), [5, SCREEN_HEIGHT - 90])
     if pg.sprite.spritecollideany(player, groups[Group.ENEMIES]):
         player.kill()
         sounds[Sound.MOVE_UP].stop()
@@ -74,7 +82,7 @@ while running:
         running = False
 
     pg.display.flip()
-    clock.tick(120)
+    clock.tick(240)
 
 pg.mixer.music.stop()
 pg.mixer.quit()

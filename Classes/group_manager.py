@@ -5,6 +5,7 @@ class Group(Enum):
     DEFAULT = 1
     ENEMIES = 2,
     CLOUDS = 3,
+    ROCKETS = 4
 
 
 class Groups:
